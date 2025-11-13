@@ -4,8 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node server-simple.js",
+    "start:full": "node server.js",
+    "dev": "node server-simple.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop lenovo-warranty-api",
+    "pm2:restart": "pm2 restart lenovo-warranty-api",
+    "pm2:reload": "pm2 reload lenovo-warranty-api",
+    "pm2:logs": "pm2 logs lenovo-warranty-api",
+    "pm2:status": "pm2 status",
+    "pm2:monit": "pm2 monit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
