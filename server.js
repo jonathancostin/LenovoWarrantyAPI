@@ -120,31 +120,28 @@ async function getMachineSpecs(serialNumber, existingPage) {
     console.log(`[spec] JS click result: ${clicked}`);
     await page.waitForTimeout(2000);
 
-    // Extract all spec name/detail pairs
+    // Extract all spec name/detail pairs using sibling relationships
     const specs = await page.evaluate(() => {
       const result = {};
       const names = document.querySelectorAll('.desc-config-name');
-      const details = document.querySelectorAll('.desc-config-detail');
 
-      names.forEach((nameEl, i) => {
+      names.forEach((nameEl) => {
         const key = nameEl.textContent.trim();
-        // The detail element might have sibling divs for multi-line content (e.g. Ports)
+        if (!key) return;
+
+        // Walk forward from this name element to collect detail text
         let value = '';
-        if (details[i]) {
-          // Get the detail text, plus any immediate sibling text nodes/divs
-          let el = details[i];
-          value = el.textContent.trim();
-          // Check next sibling — sometimes Lenovo splits long values into multiple divs
-          let next = el.nextElementSibling;
-          while (next && !next.classList.contains('desc-config-name')) {
-            if (next.classList.contains('desc-config-detail')) break; // next spec
-            value += ' ' + next.textContent.trim();
-            next = next.nextElementSibling;
+        let next = nameEl.nextElementSibling;
+        while (next) {
+          if (next.classList.contains('desc-config-name')) break; // next spec field
+          if (next.classList.contains('desc-config-detail') || next.tagName === 'DIV') {
+            const text = next.textContent.trim();
+            if (text) value += (value ? ' ' : '') + text;
           }
+          next = next.nextElementSibling;
         }
-        if (key) {
-          result[key] = value || 'N/A';
-        }
+
+        result[key] = value || 'N/A';
       });
 
       return result;
@@ -152,11 +149,31 @@ async function getMachineSpecs(serialNumber, existingPage) {
 
     // Also grab the product name / machine type from the page
     const productInfo = await page.evaluate(() => {
-      const productNameEl = document.querySelector('.machine-info-product, .product-name, h2.product-name');
+      // The product name is in the "Product Information" section or h2
+      const productNameEl = document.querySelector('.new-product-name, .product-name, h2.product-name, h3.product-name');
       const machineTypeEl = document.querySelector('.machine-type, .machineType');
+
+      // Also try to grab serial + MTM from product info section
+      const serialEl = document.querySelector('.serial-number, [class*="serial"]');
+      const mtmEl = document.querySelector('.machine-type-model, [class*="machine-type"]');
+
+      // Grab the product title from breadcrumb or page title area
+      let productName = productNameEl ? productNameEl.textContent.trim() : null;
+      if (!productName) {
+        // Try the Product Information header area
+        const h2s = document.querySelectorAll('h2, h3');
+        for (const h of h2s) {
+          const t = h.textContent.trim();
+          if (t.includes('Laptop') || t.includes('Desktop') || t.includes('ThinkPad') || t.includes('IdeaPad') || t.includes('Legion') || t.includes('V14') || t.includes('V15')) {
+            productName = t;
+            break;
+          }
+        }
+      }
+
       return {
-        productName: productNameEl ? productNameEl.textContent.trim() : null,
-        machineType: machineTypeEl ? machineTypeEl.textContent.trim() : null,
+        productName: productName || null,
+        machineType: machineTypeEl ? machineTypeEl.textContent.trim() : (mtmEl ? mtmEl.textContent.trim() : null),
       };
     });
 
