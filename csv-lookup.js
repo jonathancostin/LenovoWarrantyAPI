@@ -36,8 +36,25 @@ function parseCSVLine(line) {
   return fields;
 }
 
+function sanitizeText(s) {
+  // Replace common Unicode symbols with ASCII equivalents for CSV compatibility
+  return s
+    .replace(/®/g, '(R)')
+    .replace(/™/g, '(TM)')
+    .replace(/©/g, '(C)')
+    .replace(/°/g, ' deg')
+    .replace(/–/g, '-')
+    .replace(/—/g, '-')
+    .replace(/'/g, "'")
+    .replace(/'/g, "'")
+    .replace(/"/g, '"')
+    .replace(/"/g, '"')
+    .replace(/…/g, '...')
+    .replace(/[^\x00-\x7F]/g, ''); // Remove any remaining non-ASCII
+}
+
 function escapeCSV(val) {
-  const s = String(val == null ? '' : val);
+  const s = sanitizeText(String(val == null ? '' : val));
   if (s.includes(',') || s.includes('"') || s.includes('\n')) {
     return '"' + s.replace(/"/g, '""') + '"';
   }
