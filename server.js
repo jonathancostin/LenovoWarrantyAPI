@@ -74,19 +74,21 @@ async function getMachineSpecs(serialNumber, existingPage) {
       await page.waitForSelector('.new-machinfo-view-btn, .desc-config-name, .machine-info, .product-info', { timeout: 15000 });
       console.log('[spec] Machine info section found');
     } catch (e) {
-      console.log('[spec] Machine info section not found by selector, dumping page classes...');
+      console.log('[spec] Machine info section not found by selector, dumping page info...');
       const debugInfo = await page.evaluate(() => {
         const allClasses = new Set();
         document.querySelectorAll('[class]').forEach(el => {
-          el.className.split(/\s+/).forEach(c => { if (c.includes('mach') || c.includes('spec') || c.includes('config') || c.includes('product') || c.includes('info') || c.includes('serial')) allClasses.add(c); });
+          const cn = typeof el.className === 'string' ? el.className : (el.className.baseVal || '');
+          cn.split(/\s+/).forEach(c => { if (c && (c.includes('mach') || c.includes('spec') || c.includes('config') || c.includes('product') || c.includes('info') || c.includes('serial') || c.includes('desc') || c.includes('view'))) allClasses.add(c); });
         });
         return {
           url: window.location.href,
           relevantClasses: [...allClasses].sort(),
-          bodySnippet: document.body.innerText.substring(0, 1500)
+          bodyText: document.body.innerText.substring(0, 3000)
         };
       });
-      console.log('[spec] Debug:', JSON.stringify(debugInfo, null, 2));
+      console.log('[spec] Relevant classes:', debugInfo.relevantClasses.join(', '));
+      console.log('[spec] Body text (first 3000 chars):\n', debugInfo.bodyText);
     }
 
     // The "View Spec Info" button may be off-screen or hidden behind overlays.
