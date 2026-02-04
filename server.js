@@ -60,34 +60,37 @@ async function getMachineSpecs(serialNumber, existingPage) {
 
     const productUrl = `https://pcsupport.lenovo.com/us/en/products/${serialNumber}`;
     console.log(`[spec] Navigating to ${productUrl}`);
-    await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(3000);
+    await page.goto(productUrl, { waitUntil: 'networkidle', timeout: 45000 });
+    await page.waitForTimeout(4000);
 
-    // Wait for the "View" spec info button to appear
-    const viewBtnSelector = 'span[aria-label="View Spec Info"], .new-machinfo-view-btn-text';
-    try {
-      await page.waitForSelector(viewBtnSelector, { timeout: 15000 });
-      console.log('[spec] Found "View Spec Info" button, clicking...');
-      await page.click(viewBtnSelector);
-      await page.waitForTimeout(2000);
-    } catch (e) {
-      console.log('[spec] "View Spec Info" button not found, trying alternate approach...');
-      // Try clicking the parent div
-      try {
-        await page.click('.new-machinfo-view-btn');
-        await page.waitForTimeout(2000);
-      } catch (e2) {
-        console.log('[spec] Alternate click also failed:', e2.message);
+    // The "View Spec Info" button may be off-screen or hidden behind overlays.
+    // Use JavaScript to scroll to it, click it, and force the desc panel visible.
+    const clicked = await page.evaluate(() => {
+      // Dismiss any cookie/consent overlays
+      const overlays = document.querySelectorAll('[class*="cookie"] button, [class*="consent"] button, [class*="accept"]');
+      overlays.forEach(b => { try { b.click(); } catch(e) {} });
+
+      const btn = document.querySelector('.new-machinfo-view-btn-text') ||
+                  document.querySelector('span[aria-label="View Spec Info"]') ||
+                  document.querySelector('.new-machinfo-view-btn');
+      if (btn) {
+        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+        btn.click();
+        // Also force the desc panel visible in case click didn't toggle it
+        const desc = document.querySelector('.new-machinfo-desc');
+        if (desc) desc.style.display = 'block';
+        return true;
       }
-    }
-
-    // Wait for the spec info container to be visible
-    try {
-      await page.waitForSelector('.new-machinfo-desc', { state: 'visible', timeout: 10000 });
-      console.log('[spec] Spec info container is visible');
-    } catch (e) {
-      console.log('[spec] Spec info container not visible, trying to extract anyway...');
-    }
+      // Fallback: force desc panel visible even without clicking
+      const desc = document.querySelector('.new-machinfo-desc');
+      if (desc) {
+        desc.style.display = 'block';
+        return true;
+      }
+      return false;
+    });
+    console.log(`[spec] JS click result: ${clicked}`);
+    await page.waitForTimeout(2000);
 
     // Extract all spec name/detail pairs
     const specs = await page.evaluate(() => {
