@@ -61,13 +61,32 @@ async function getMachineSpecs(serialNumber, existingPage) {
     const productUrl = `https://pcsupport.lenovo.com/us/en/products/${serialNumber}`;
     console.log(`[spec] Navigating to ${productUrl}`);
     await page.goto(productUrl, { waitUntil: 'load', timeout: 30000 });
+    await page.waitForTimeout(5000);
+
+    // Debug: log final URL + title + check what we landed on
+    const finalUrl = page.url();
+    const pageTitle = await page.title();
+    console.log(`[spec] Final URL: ${finalUrl}`);
+    console.log(`[spec] Page title: ${pageTitle}`);
+
     // Wait for the machine info section to render (React/SPA content)
     try {
-      await page.waitForSelector('.new-machinfo-view-btn, .desc-config-name', { timeout: 20000 });
+      await page.waitForSelector('.new-machinfo-view-btn, .desc-config-name, .machine-info, .product-info', { timeout: 15000 });
       console.log('[spec] Machine info section found');
     } catch (e) {
-      console.log('[spec] Machine info section not found by selector, waiting extra...');
-      await page.waitForTimeout(8000);
+      console.log('[spec] Machine info section not found by selector, dumping page classes...');
+      const debugInfo = await page.evaluate(() => {
+        const allClasses = new Set();
+        document.querySelectorAll('[class]').forEach(el => {
+          el.className.split(/\s+/).forEach(c => { if (c.includes('mach') || c.includes('spec') || c.includes('config') || c.includes('product') || c.includes('info') || c.includes('serial')) allClasses.add(c); });
+        });
+        return {
+          url: window.location.href,
+          relevantClasses: [...allClasses].sort(),
+          bodySnippet: document.body.innerText.substring(0, 1500)
+        };
+      });
+      console.log('[spec] Debug:', JSON.stringify(debugInfo, null, 2));
     }
 
     // The "View Spec Info" button may be off-screen or hidden behind overlays.
