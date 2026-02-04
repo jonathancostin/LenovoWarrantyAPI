@@ -13,7 +13,7 @@ Three ways to use it:
 npm install
 ```
 
-> **Note:** Playwright will download a Chromium browser on first install. On macOS you may also need `npx playwright install chromium`.
+> **Note:** This project uses Google Chrome (not Playwright's bundled Chromium) to bypass TLS fingerprinting on Lenovo's site. Make sure Chrome is installed, then run `npx playwright install chrome` to register it with Playwright.
 
 ## CLI Usage
 
@@ -193,7 +193,7 @@ curl -X POST http://localhost:3001/api/bulk-lookup \
 
 ## Notes
 
-- Playwright launches a visible Chromium instance for each lookup (stealth mode to avoid bot detection)
+- Playwright launches Chrome in headless mode for each lookup (uses `channel: 'chrome'` to bypass TLS fingerprinting)
 - Each lookup takes ~10–20 seconds depending on network speed
 - The Lenovo support site is an SPA — scraping selectors may need updating if their UI changes
 - For large CSV batches, consider increasing the delay to avoid rate limiting
