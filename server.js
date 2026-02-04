@@ -63,32 +63,12 @@ async function getMachineSpecs(serialNumber, existingPage) {
     await page.goto(productUrl, { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(5000);
 
-    // Debug: log final URL + title + check what we landed on
-    const finalUrl = page.url();
-    const pageTitle = await page.title();
-    console.log(`[spec] Final URL: ${finalUrl}`);
-    console.log(`[spec] Page title: ${pageTitle}`);
-
-    // Wait for the machine info section to render (React/SPA content)
+    // Wait for the machine info section to render (React/SPA)
     try {
-      await page.waitForSelector('.new-machinfo-view-btn, .desc-config-name, .machine-info, .product-info', { timeout: 15000 });
+      await page.waitForSelector('.new-machinfo-view-btn, .desc-config-name', { timeout: 15000 });
       console.log('[spec] Machine info section found');
     } catch (e) {
-      console.log('[spec] Machine info section not found by selector, dumping page info...');
-      const debugInfo = await page.evaluate(() => {
-        const allClasses = new Set();
-        document.querySelectorAll('[class]').forEach(el => {
-          const cn = typeof el.className === 'string' ? el.className : (el.className.baseVal || '');
-          cn.split(/\s+/).forEach(c => { if (c && (c.includes('mach') || c.includes('spec') || c.includes('config') || c.includes('product') || c.includes('info') || c.includes('serial') || c.includes('desc') || c.includes('view'))) allClasses.add(c); });
-        });
-        return {
-          url: window.location.href,
-          relevantClasses: [...allClasses].sort(),
-          bodyText: document.body.innerText.substring(0, 3000)
-        };
-      });
-      console.log('[spec] Relevant classes:', debugInfo.relevantClasses.join(', '));
-      console.log('[spec] Body text (first 3000 chars):\n', debugInfo.bodyText);
+      console.log('[spec] Machine info section not found by selector, continuing anyway...');
     }
 
     // The "View Spec Info" button may be off-screen or hidden behind overlays.
