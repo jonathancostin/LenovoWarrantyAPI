@@ -16,13 +16,14 @@ app.use(express.json());
 // Shared browser launch + context helper
 async function launchBrowser() {
   const browser = await chromium.launch({
-    headless: true,
+    headless: false,
     args: [
       '--disable-blink-features=AutomationControlled',
       '--disable-dev-shm-usage',
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--window-size=1920,1080'
+      '--window-size=1920,1080',
+      '--disable-http2'
     ]
   });
 
