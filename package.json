@@ -1,25 +1,30 @@
 {
-  "name": "temp",
+  "name": "lenovo-warranty-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "node server-simple.js",
-    "start:full": "node server.js",
-    "dev": "node server-simple.js",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop lenovo-warranty-api",
-    "pm2:restart": "pm2 restart lenovo-warranty-api",
-    "pm2:reload": "pm2 reload lenovo-warranty-api",
-    "pm2:logs": "pm2 logs lenovo-warranty-api",
-    "pm2:status": "pm2 status",
-    "pm2:monit": "pm2 monit",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "Lenovo warranty and hardware spec lookup via CLI, CSV batch processing, or REST API",
+  "main": "server.js",
+  "bin": {
+    "lenovo-warranty": "./cli.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "start": "node server.js",
+    "cli": "node cli.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "lenovo",
+    "warranty",
+    "serial",
+    "lookup",
+    "specs",
+    "playwright"
+  ],
+  "author": "Jonathan Costin",
+  "license": "MIT",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

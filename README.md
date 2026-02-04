@@ -1,19 +1,99 @@
 # Lenovo Warranty + Spec Lookup
 
-A Node.js toolkit for looking up Lenovo warranty status and hardware specs by serial number. Uses Playwright to scrape the Lenovo support site.
+A Node.js toolkit for looking up Lenovo warranty status and hardware specifications by serial number. Uses Playwright to scrape the Lenovo support site.
 
-Three ways to use it:
-- **CLI** — look up a single serial from the command line
-- **CSV** — batch-process a spreadsheet of serials
+**Three ways to use it:**
+- **CLI** — Look up a single serial from the command line
+- **CSV** — Batch-process a spreadsheet of serials
 - **API Server** — REST endpoints for integration with other apps
 
-## Setup
+---
 
+## Prerequisites
+
+This tool requires **Node.js** and **Google Chrome** to be installed.
+
+### Installing Node.js
+
+#### macOS
+
+**Option A: Using Homebrew (recommended)**
 ```bash
-npm install
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Node.js
+brew install node
 ```
 
-> **Note:** This project uses Google Chrome (not Playwright's bundled Chromium) to bypass TLS fingerprinting on Lenovo's site. Make sure Chrome is installed, then run `npx playwright install chrome` to register it with Playwright.
+**Option B: Direct download**
+1. Go to https://nodejs.org
+2. Download the macOS installer (LTS version recommended)
+3. Run the installer
+
+Verify installation:
+```bash
+node --version   # Should show v18 or higher
+npm --version    # Should show 9 or higher
+```
+
+#### Windows
+
+**Option A: Direct download (recommended)**
+1. Go to https://nodejs.org
+2. Download the Windows installer (LTS version recommended)
+3. Run the installer, accept defaults
+
+**Option B: Using winget**
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+**Option C: Using Chocolatey**
+```powershell
+choco install nodejs-lts
+```
+
+Verify installation (open new terminal after install):
+```powershell
+node --version
+npm --version
+```
+
+### Installing Google Chrome
+
+This tool uses Chrome (not Playwright's bundled Chromium) to bypass TLS fingerprinting on Lenovo's website.
+
+#### macOS
+```bash
+# Via Homebrew
+brew install --cask google-chrome
+
+# Or download from https://www.google.com/chrome/
+```
+
+#### Windows
+Download from https://www.google.com/chrome/ and install.
+
+---
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/jonathancostin/LenovoWarrantyAPI.git
+cd LenovoWarrantyAPI
+
+# Install Node.js dependencies
+npm install
+
+# Install Playwright's Chrome integration
+npx playwright install chromium
+```
+
+That's it! You're ready to use the tool.
+
+---
 
 ## CLI Usage
 
@@ -50,7 +130,7 @@ node cli.js PF3AHRQ7 --specs --json
 | `--specs` | Hardware specs only |
 | `-h, --help` | Show help |
 
-### Example Output (pretty)
+### Example Output
 
 ```
 ──────────────────────────────────────────────────
@@ -76,6 +156,8 @@ node cli.js PF3AHRQ7 --specs --json
 ──────────────────────────────────────────────────
 ```
 
+---
+
 ## CSV Batch Lookup
 
 Process a CSV of serial numbers and get enriched output with warranty + spec data.
@@ -84,7 +166,7 @@ Process a CSV of serial numbers and get enriched output with warranty + spec dat
 # Basic usage
 node csv-lookup.js input.csv output.csv
 
-# Auto-named output (input.results.csv)
+# Auto-named output (creates input.results.csv)
 node csv-lookup.js input.csv
 
 # Custom delay between lookups (default 2000ms)
@@ -131,16 +213,18 @@ Your original columns are kept, and the following columns are appended:
 - **Error resilience** — if one serial fails, it logs the error and continues with the rest
 - **Rate limiting** — configurable delay between lookups (default 2s) to avoid being blocked
 
+---
+
 ## API Server
 
 For integration with web apps or other services:
 
 ```bash
 # Start the server (port 3001 by default)
-node server.js
+npm start
 
-# Or use PM2 for production
-npm run pm2:start
+# Or directly
+node server.js
 ```
 
 ### Endpoints
@@ -153,21 +237,37 @@ npm run pm2:start
 | `POST` | `/api/bulk-lookup` | Multiple serials (max 50) |
 | `GET` | `/api/health` | Health check |
 
-### Example Request
+### Example Requests
 
+**Single lookup:**
 ```bash
 curl -X POST http://localhost:3001/api/full-lookup \
   -H "Content-Type: application/json" \
   -d '{"serialNumber": "PF3AHRQ7"}'
 ```
 
-### Bulk Request
-
+**Bulk lookup:**
 ```bash
 curl -X POST http://localhost:3001/api/bulk-lookup \
   -H "Content-Type: application/json" \
   -d '{"serialNumbers": ["PF3AHRQ7", "MJ09RK9B"]}'
 ```
+
+### Environment Variables
+
+Create a `.env` file to customize:
+
+```env
+PORT=3001
+ALLOWED_ORIGIN=*
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3001` | API server port |
+| `ALLOWED_ORIGIN` | `*` | CORS origin (use `*` for any, or specify your domain) |
+
+---
 
 ## Project Structure
 
@@ -177,23 +277,33 @@ curl -X POST http://localhost:3001/api/bulk-lookup \
 ├── server.js           # Express API server
 ├── lib/
 │   └── scraper.js      # Shared Playwright scraping logic
-├── server-simple.js    # Lightweight server (no specs)
-├── test-api.js         # API tests
-├── ecosystem.config.js # PM2 config
-├── deploy.sh           # Deployment script
 └── package.json
 ```
 
-## Environment Variables
+---
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | API server port |
-| `ALLOWED_ORIGIN` | `*` | CORS origin |
+## Troubleshooting
 
-## Notes
+### "Chrome not found" error
+Make sure Google Chrome is installed and run:
+```bash
+npx playwright install chromium
+```
 
-- Playwright launches Chrome in headless mode for each lookup (uses `channel: 'chrome'` to bypass TLS fingerprinting)
-- Each lookup takes ~10–20 seconds depending on network speed
-- The Lenovo support site is an SPA — scraping selectors may need updating if their UI changes
-- For large CSV batches, consider increasing the delay to avoid rate limiting
+### Slow lookups
+Each lookup takes ~10–20 seconds due to page load times. For CSV batch processing, the default 2-second delay between lookups helps avoid rate limiting.
+
+### Selectors stopped working
+Lenovo's support site is an SPA. If the scraper stops returning data, the site's HTML structure may have changed. Check `lib/scraper.js` and update the selectors.
+
+### Rate limiting
+If you're getting blocked or empty results on bulk lookups, increase the delay:
+```bash
+node csv-lookup.js input.csv output.csv --delay 5000
+```
+
+---
+
+## License
+
+MIT
